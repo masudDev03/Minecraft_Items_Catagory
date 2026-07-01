@@ -1,0 +1,207 @@
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-sans); }
+.search-bar {
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 15px;
+  border: 0.5px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+}
+.search-bar:focus { outline: 2px solid var(--border-accent); }
+.tabs {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 1rem;
+}
+.tab {
+  padding: 5px 12px; border-radius: 999px; font-size: 13px; cursor: pointer;
+  border: 0.5px solid var(--border); background: var(--surface-1);
+  color: var(--text-secondary); transition: all 0.15s;
+}
+.tab.active {
+  background: var(--bg-accent); color: var(--text-accent);
+  border-color: var(--border-accent); font-weight: 500;
+}
+.grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px;
+}
+.card {
+  background: var(--surface-2); border: 0.5px solid var(--border);
+  border-radius: 12px; padding: 14px; cursor: pointer; transition: border-color 0.15s;
+}
+.card:hover { border-color: var(--border-strong); }
+.card-icon { font-size: 22px; margin-bottom: 6px; }
+.card-name { font-size: 13px; font-weight: 500; color: var(--text-primary); margin-bottom: 2px; }
+.card-cat { font-size: 11px; color: var(--text-muted); }
+.cat-header {
+  font-size: 13px; font-weight: 500; color: var(--text-secondary);
+  margin: 1rem 0 0.5rem; display: flex; align-items: center; gap: 6px;
+}
+.count-badge {
+  font-size: 11px; background: var(--surface-1); border: 0.5px solid var(--border);
+  border-radius: 999px; padding: 1px 8px; color: var(--text-muted);
+}
+.empty { color: var(--text-muted); font-size: 14px; padding: 2rem 0; text-align: center; }
+</style>
+
+<h2 class="sr-only">Minecraft item category browser — search or filter by category to find where to store each item.</h2>
+
+<input class="search-bar" type="text" id="search" placeholder="Search items… (e.g. iron, sword, sapling)" />
+
+<div class="tabs" id="tabs"></div>
+<div id="content"></div>
+
+<script>
+const categories = [
+  {
+    name: "Ores & Raw Materials", emoji: "⛏️",
+    items: ["Coal", "Iron Ore", "Copper Ore", "Gold Ore", "Redstone Ore", "Lapis Ore", "Diamond Ore", "Emerald Ore", "Nether Quartz Ore", "Nether Gold Ore", "Ancient Debris", "Raw Iron", "Raw Copper", "Raw Gold", "Coal Ore", "Deepslate Iron Ore", "Deepslate Gold Ore", "Deepslate Diamond Ore"]
+  },
+  {
+    name: "Ingots & Gems", emoji: "💎",
+    items: ["Iron Ingot", "Gold Ingot", "Copper Ingot", "Netherite Ingot", "Netherite Scrap", "Diamond", "Emerald", "Lapis Lazuli", "Redstone Dust", "Quartz", "Amethyst Shard", "Prismarine Shard", "Prismarine Crystal", "Nether Brick"]
+  },
+  {
+    name: "Weapons & Tools", emoji: "⚔️",
+    items: ["Wooden Sword", "Stone Sword", "Iron Sword", "Gold Sword", "Diamond Sword", "Netherite Sword", "Wooden Pickaxe", "Stone Pickaxe", "Iron Pickaxe", "Gold Pickaxe", "Diamond Pickaxe", "Netherite Pickaxe", "Axe (all tiers)", "Shovel (all tiers)", "Hoe (all tiers)", "Bow", "Crossbow", "Trident", "Fishing Rod", "Flint & Steel", "Shears", "Shield", "Arrow", "Spectral Arrow", "Tipped Arrow"]
+  },
+  {
+    name: "Armor", emoji: "🛡️",
+    items: ["Leather Helmet", "Iron Helmet", "Gold Helmet", "Diamond Helmet", "Netherite Helmet", "Chainmail Helmet", "Leather Chestplate", "Iron Chestplate", "Diamond Chestplate", "Netherite Chestplate", "Leggings (all tiers)", "Boots (all tiers)", "Turtle Shell", "Elytra"]
+  },
+  {
+    name: "Building Blocks", emoji: "🧱",
+    items: ["Stone", "Cobblestone", "Granite", "Diorite", "Andesite", "Deepslate", "Calcite", "Tuff", "Obsidian", "Netherrack", "Basalt", "Blackstone", "End Stone", "Purpur Block", "Terracotta", "Glazed Terracotta", "Concrete", "Concrete Powder", "Bricks", "Stone Bricks", "Mossy Stone Bricks", "Sandstone", "Red Sandstone", "Quartz Block", "Prismarine", "Nether Bricks", "Mud Bricks"]
+  },
+  {
+    name: "Wood & Planks", emoji: "🪵",
+    items: ["Oak Log", "Spruce Log", "Birch Log", "Jungle Log", "Acacia Log", "Dark Oak Log", "Mangrove Log", "Cherry Log", "Crimson Stem", "Warped Stem", "Oak Planks", "Spruce Planks", "Birch Planks", "Jungle Planks", "Acacia Planks", "Dark Oak Planks", "Mangrove Planks", "Cherry Planks", "Stripped Logs (all)", "Oak Wood", "Bamboo Block"]
+  },
+  {
+    name: "Food & Crops", emoji: "🍎",
+    items: ["Apple", "Golden Apple", "Enchanted Golden Apple", "Bread", "Carrot", "Golden Carrot", "Potato", "Baked Potato", "Poisonous Potato", "Wheat", "Pumpkin", "Melon", "Melon Slice", "Beetroot", "Beetroot Soup", "Mushroom Stew", "Rabbit Stew", "Suspicious Stew", "Cooked Beef", "Raw Beef", "Cooked Chicken", "Raw Chicken", "Cooked Pork", "Raw Pork", "Cooked Fish", "Raw Cod", "Salmon", "Tropical Fish", "Pufferfish", "Cookie", "Cake", "Pumpkin Pie", "Honey Bottle", "Dried Kelp", "Sweet Berries", "Glow Berries", "Chorus Fruit"]
+  },
+  {
+    name: "Seeds & Farming", emoji: "🌱",
+    items: ["Wheat Seeds", "Pumpkin Seeds", "Melon Seeds", "Beetroot Seeds", "Torchflower Seeds", "Pitcher Pod", "Nether Wart", "Kelp", "Sea Pickle", "Cactus", "Sugar Cane", "Bamboo", "Cocoa Beans", "Lily Pad", "Spore Blossom", "Glow Lichen"]
+  },
+  {
+    name: "Mob Drops", emoji: "🦴",
+    items: ["Bone", "Bone Meal", "String", "Spider Eye", "Fermented Spider Eye", "Gunpowder", "Slimeball", "Blaze Rod", "Blaze Powder", "Ghast Tear", "Magma Cream", "Ender Pearl", "Eye of Ender", "Shulker Shell", "Phantom Membrane", "Rabbit Hide", "Rabbit Foot", "Feather", "Leather", "Ink Sac", "Glow Ink Sac", "Rotten Flesh", "Zombie Brain", "Wither Rose", "Nether Star", "Dragon Egg", "Dragon's Breath", "Totem of Undying", "Nautilus Shell", "Heart of the Sea", "Scute"]
+  },
+  {
+    name: "Potions & Brewing", emoji: "🧪",
+    items: ["Water Bottle", "Awkward Potion", "Mundane Potion", "Thick Potion", "Potion of Healing", "Potion of Regeneration", "Potion of Strength", "Potion of Swiftness", "Potion of Fire Resistance", "Potion of Night Vision", "Potion of Invisibility", "Potion of Water Breathing", "Potion of Leaping", "Potion of Slowness", "Potion of Weakness", "Potion of Harming", "Potion of Poison", "Potion of Slow Falling", "Splash Potions (all)", "Lingering Potions (all)", "Fermented Spider Eye", "Nether Wart", "Blaze Powder", "Glowstone Dust", "Redstone Dust", "Dragon's Breath", "Gunpowder"]
+  },
+  {
+    name: "Redstone & Mechanisms", emoji: "🔴",
+    items: ["Redstone Dust", "Redstone Torch", "Redstone Block", "Lever", "Button (all types)", "Pressure Plate (all types)", "Observer", "Piston", "Sticky Piston", "Slime Block", "Honey Block", "Dropper", "Dispenser", "Hopper", "Comparator", "Repeater", "Tripwire Hook", "String", "Daylight Detector", "Target Block", "Detector Rail", "Activator Rail", "Powered Rail", "Rail", "TNT", "Sculk Sensor", "Calibrated Sculk Sensor"]
+  },
+  {
+    name: "Enchanting & XP", emoji: "✨",
+    items: ["Enchanting Table", "Bookshelf", "Anvil", "Grindstone", "Book", "Book and Quill", "Written Book", "Name Tag", "Enchanted Book", "Lapis Lazuli", "Experience Bottle (Bottle o' Enchanting)"]
+  },
+  {
+    name: "Decorations", emoji: "🎨",
+    items: ["Painting", "Item Frame", "Glow Item Frame", "Flower Pot", "Banner (all colors)", "Banner Patterns", "Armor Stand", "Lantern", "Soul Lantern", "Candle (all colors)", "Torch", "Soul Torch", "Campfire", "Soul Campfire", "Jack o'Lantern", "Beacon", "End Rod", "Sea Lantern", "Shroomlight", "Glowstone", "Froglight (all 3)", "Amethyst Cluster", "Bamboo Mosaic", "Pink Petals"]
+  },
+  {
+    name: "Plants & Nature", emoji: "🌿",
+    items: ["Oak Sapling", "Spruce Sapling", "Birch Sapling", "Jungle Sapling", "Acacia Sapling", "Dark Oak Sapling", "Mangrove Propagule", "Cherry Sapling", "Azalea", "Flowering Azalea", "Sunflower", "Rose Bush", "Lilac", "Peony", "Dandelion", "Poppy", "Blue Orchid", "Allium", "Oxeye Daisy", "Cornflower", "Lily of the Valley", "Wither Rose", "Tall Grass", "Fern", "Dead Bush", "Moss Block", "Grass Block", "Podzol", "Mycelium", "Rooted Dirt", "Mud"]
+  },
+  {
+    name: "Storage & Utility", emoji: "📦",
+    items: ["Chest", "Trapped Chest", "Barrel", "Ender Chest", "Shulker Box (all colors)", "Bundle", "Furnace", "Blast Furnace", "Smoker", "Crafting Table", "Cartography Table", "Fletching Table", "Stonecutter", "Loom", "Smithing Table", "Grindstone", "Brewing Stand", "Cauldron", "Composter", "Beehive", "Bee Nest"]
+  },
+  {
+    name: "Transportation", emoji: "🚂",
+    items: ["Minecart", "Chest Minecart", "Hopper Minecart", "Furnace Minecart", "TNT Minecart", "Rail", "Powered Rail", "Detector Rail", "Activator Rail", "Boat (all wood types)", "Chest Boat (all types)", "Saddle", "Horse Armor (all tiers)", "Elytra", "Firework Rocket"]
+  },
+  {
+    name: "Dyes & Colors", emoji: "🎨",
+    items: ["White Dye", "Light Gray Dye", "Gray Dye", "Black Dye", "Brown Dye", "Red Dye", "Orange Dye", "Yellow Dye", "Lime Dye", "Green Dye", "Cyan Dye", "Light Blue Dye", "Blue Dye", "Purple Dye", "Magenta Dye", "Pink Dye", "Ink Sac", "Glow Ink Sac", "Cocoa Beans", "Lapis Lazuli", "Bone Meal"]
+  },
+  {
+    name: "Nether Items", emoji: "🔥",
+    items: ["Netherite Ingot", "Netherite Scrap", "Ancient Debris", "Blaze Rod", "Blaze Powder", "Ghast Tear", "Magma Cream", "Nether Brick", "Nether Quartz", "Nether Wart", "Glowstone Dust", "Glowstone", "Soul Sand", "Soul Soil", "Basalt", "Blackstone", "Crimson Nylium", "Warped Nylium", "Shroomlight", "Hoglin Hide", "Snout Banner Pattern", "Gold Nugget", "Piglin Banner Pattern"]
+  },
+  {
+    name: "End Items", emoji: "🌌",
+    items: ["Ender Pearl", "Eye of Ender", "End Stone", "End Stone Brick", "Purpur Block", "End Rod", "Chorus Fruit", "Popped Chorus Fruit", "Dragon Egg", "Dragon's Breath", "Elytra", "Shulker Shell", "Shulker Box"]
+  },
+  {
+    name: "Music & Records", emoji: "🎵",
+    items: ["Music Disc - 13", "Music Disc - Cat", "Music Disc - Blocks", "Music Disc - Chirp", "Music Disc - Far", "Music Disc - Mall", "Music Disc - Mellohi", "Music Disc - Stal", "Music Disc - Strad", "Music Disc - Ward", "Music Disc - 11", "Music Disc - Wait", "Music Disc - Otherside", "Music Disc - 5", "Music Disc - Pigstep", "Music Disc - Relic", "Goat Horn (all variants)", "Note Block"]
+  },
+];
+
+let activeTab = "All";
+let searchVal = "";
+
+const tabs = document.getElementById("tabs");
+const content = document.getElementById("content");
+const searchEl = document.getElementById("search");
+
+function buildTabs() {
+  const allBtn = document.createElement("button");
+  allBtn.className = "tab active";
+  allBtn.textContent = "All";
+  allBtn.onclick = () => setTab("All");
+  tabs.appendChild(allBtn);
+  categories.forEach(cat => {
+    const btn = document.createElement("button");
+    btn.className = "tab";
+    btn.textContent = cat.emoji + " " + cat.name;
+    btn.onclick = () => setTab(cat.name);
+    tabs.appendChild(btn);
+  });
+}
+
+function setTab(name) {
+  activeTab = name;
+  document.querySelectorAll(".tab").forEach(t => {
+    t.classList.toggle("active", t.textContent.includes(name) || (name === "All" && t.textContent === "All"));
+  });
+  render();
+}
+
+function render() {
+  const q = searchVal.toLowerCase();
+  let html = "";
+  const filtered = categories
+    .filter(cat => activeTab === "All" || cat.name === activeTab)
+    .map(cat => ({
+      ...cat,
+      items: cat.items.filter(item => !q || item.toLowerCase().includes(q) || cat.name.toLowerCase().includes(q))
+    }))
+    .filter(cat => cat.items.length > 0);
+
+  if (filtered.length === 0) {
+    content.innerHTML = `<p class="empty">No items found for "<strong>${searchVal}</strong>"</p>`;
+    return;
+  }
+
+  filtered.forEach(cat => {
+    html += `<div class="cat-header">${cat.emoji} ${cat.name} <span class="count-badge">${cat.items.length}</span></div>`;
+    html += `<div class="grid">`;
+    cat.items.forEach(item => {
+      html += `<div class="card"><div class="card-icon">${cat.emoji}</div><div class="card-name">${item}</div><div class="card-cat">${cat.name}</div></div>`;
+    });
+    html += `</div>`;
+  });
+
+  content.innerHTML = html;
+}
+
+searchEl.addEventListener("input", e => {
+  searchVal = e.target.value;
+  if (searchVal) { activeTab = "All"; document.querySelectorAll(".tab").forEach(t => t.classList.remove("active")); document.querySelector(".tab").classList.add("active"); }
+  render();
+});
+
+buildTabs();
+render();
+</script>
