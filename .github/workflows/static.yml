@@ -26,7 +26,7 @@ jobs:
   deploy:
     environment:
       name: github-pages
-      url: https://github.com/masudDev03/Minecraft_Items_Catagory/blob/main/minecraft-item-browser/index.html
+      url: https://masuddev03.github.io/Minecraft_Items_Catagory/minecraft-item-browser/index.html
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
